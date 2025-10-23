@@ -1,4 +1,4 @@
-/* for initalization and gameplay loop /src/main.cpp*/
+/* for initialization and gameplay loop /src/main.cpp */
 
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
@@ -6,6 +6,7 @@
 #include <iostream>
 #include <vector>
 #include <random>
+#include <algorithm>
 #include "util/Texture.h"
 #include "systems/SpriteRenderer.h"
 #include "objects/Ball.h"
@@ -29,15 +30,16 @@ int main() {
     // Load Textures
     Texture paddleTexture("/home/breki/Projects/MyEngine/assets/sprites/paddle.png");
     Texture ballTexture("/home/breki/Projects/MyEngine/assets/sprites/ball.png");
-    Texture brickTexture("/home/breki/Projects/MyEngine/assets/sprites/brick.png");
+    Texture brickTexture1("/home/breki/Projects/MyEngine/assets/sprites/brick1.png"); // Durability 1
+    Texture brickTexture2("/home/breki/Projects/MyEngine/assets/sprites/brick2.png"); // Durability 2
+    Texture brickTexture3("/home/breki/Projects/MyEngine/assets/sprites/brick3.png"); // Durability 3
     Texture powerupTexture("/home/breki/Projects/MyEngine/assets/sprites/powerup.png");
     SpriteRenderer renderer;
 
-    // Game Objects --Memory allocated here
-    Paddle paddle = {400, 500, 64, 32};  // Bottom, 64x32
+    // Game Objects
+    Paddle paddle = {400, 500, 64, 20};  // Bottom, 64x32
     Ball ball = {400, 300, 200, -200, 8}; // Center, 16x16
     Game game = {0, 3};
-    // memory consuimg items
     std::vector<Brick> bricks;
     std::vector<Powerup> powerups;
 
@@ -60,6 +62,7 @@ int main() {
     while (running) {
         // Handle Events
         SDL_Event e;
+
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_QUIT) running = false;
             if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_r && gameOver) {
@@ -72,7 +75,6 @@ int main() {
                     for (int col = 0; col < 5; col++) {
                         int durability = (row == 0) ? 3 : (row == 1) ? 2 : 1;
                         int scoreValue = durability * 10;
-                        // emplace_back allocated memory dynamically
                         bricks.emplace_back(100 + col*120, 100 + row*40, 80, 20, durability, scoreValue);
                     }
                 }
@@ -85,7 +87,7 @@ int main() {
             paddle.Update(deltaTime);
             ball.Update(deltaTime, paddle.x, paddle.y, paddle.w, paddle.h, game, gameOver);
             for (auto& brick : bricks) {
-                if (brick.CheckCollision(ball.x, ball.y, ball.radius)) {
+                if (brick.active && brick.CheckCollision(ball.x, ball.y, ball.radius)) {
                     ball.vy = -ball.vy;
                     game.score += brick.scoreValue;
                     std::cerr << "Score: " << game.score << std::endl;
@@ -96,6 +98,26 @@ int main() {
                     }
                 }
             }
+            // Update powerups
+            for (auto& powerup : powerups) {
+                if (powerup.active) {
+                    powerup.Update(deltaTime, paddle.x, paddle.y, paddle.w, paddle.h);
+                    // Apply powerup effect if collected
+                    if (!powerup.active && powerup.y >= paddle.y - paddle.h/2 && powerup.y <= paddle.y + paddle.h/2) {
+                        if (powerup.type == Powerup::PADDLE_SIZE) {
+                            paddle.SetWidth(paddle.w * 1.5); // Increase paddle width by 50%
+                        } else if (powerup.type == Powerup::EXTRA_LIFE) {
+                            game.lives += 1;
+                            std::cerr << "Extra life gained! Lives: " << game.lives << std::endl;
+                        }
+                    }
+                }
+            }
+            // Remove inactive powerups
+            powerups.erase(
+                std::remove_if(powerups.begin(), powerups.end(), [](const Powerup& p) { return !p.active; }),
+                powerups.end()
+            );
         }
         
         // Rendering
@@ -103,9 +125,13 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT);
         
         renderer.DrawSprite(paddleTexture, paddle.x, paddle.y, paddle.w, paddle.h);
+
         renderer.DrawSprite(ballTexture, ball.x, ball.y, 16, 16);
         for (auto& brick : bricks) {
             if (brick.active) {
+                // Select texture based on durability
+                Texture& brickTexture = (brick.durability == 3) ? brickTexture3 :
+                                       (brick.durability == 2) ? brickTexture2 : brickTexture1;
                 renderer.DrawSprite(brickTexture, brick.x, brick.y, brick.w, brick.h);
             }
         }
