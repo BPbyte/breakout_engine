@@ -1,6 +1,5 @@
 /*For managing textures /src/util/Texture.cpp*/
 
-
 #include "Texture.h"
 #include <iostream>
 #include <stb_image.h>
@@ -16,7 +15,6 @@ Texture::Texture(const char* imagePath) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     int width, height, nrChannels;
-    stbi_set_flip_vertically_on_load(true);
     unsigned char* data = stbi_load(imagePath, &width, &height, &nrChannels, 0);
 
     if (data) {
@@ -41,7 +39,24 @@ Texture::Texture(const char* imagePath) {
 
 Texture::~Texture() {
     glBindTexture(GL_TEXTURE_2D, 0);
-    glDeleteTextures(1, &id);
+    if (id != 0) {
+        glDeleteTextures(1, &id);
+    }
+}
+
+Texture::Texture(Texture&& other) noexcept : id(other.id) {
+    other.id = 0;
+}
+
+Texture& Texture::operator=(Texture&& other) noexcept {
+    if (this != &other) {
+        if (id != 0) {
+            glDeleteTextures(1, &id);
+        }
+        id = other.id;
+        other.id = 0;
+    }
+    return *this;
 }
 
 void Texture::Bind() const {
