@@ -15,6 +15,23 @@
 #include "objects/Brick.h"
 #include "objects/Powerup.h"
 
+// Function to generate bricks
+void GenerateBricks(std::vector<Brick>& bricks, std::mt19937& gen) {
+    bricks.clear(); // Clear existing bricks
+
+    // Procedural Brick Generation
+    std::uniform_int_distribution<> durabilityDistribution(1, 3);
+    for (int row = 0; row < 8; row++) {
+        for (int col = 0; col < 6; col++) {
+            bool isGap = std::uniform_real_distribution<>(0, 1)(gen) < 0.2;
+            if (!isGap) {
+            int durability = durabilityDistribution(gen);
+            int scoreValue = durability * 10;
+            bricks.emplace_back(100 + col*120, 100 + row*40, 80, 20, durability, scoreValue);}
+        }
+    }
+}
+
 int main() {
     // Initialize SDL
     SDL_Init(SDL_INIT_VIDEO);
@@ -30,35 +47,29 @@ int main() {
     // Load Textures
     Texture paddleTexture("/home/breki/Projects/MyEngine/assets/sprites/paddle.png");
     Texture ballTexture("/home/breki/Projects/MyEngine/assets/sprites/ball.png");
-    Texture brickTexture1("/home/breki/Projects/MyEngine/assets/sprites/brick1.png"); // Durability 1
-    Texture brickTexture2("/home/breki/Projects/MyEngine/assets/sprites/brick2.png"); // Durability 2
-    Texture brickTexture3("/home/breki/Projects/MyEngine/assets/sprites/brick3.png"); // Durability 3
+    Texture brickTexture1("/home/breki/Projects/MyEngine/assets/sprites/brick1.png"); 
+    Texture brickTexture2("/home/breki/Projects/MyEngine/assets/sprites/brick2.png"); 
+    Texture brickTexture3("/home/breki/Projects/MyEngine/assets/sprites/brick3.png"); 
     Texture powerupTexture("/home/breki/Projects/MyEngine/assets/sprites/powerup.png");
     SpriteRenderer renderer;
 
     // Game Objects
-    Paddle paddle = {400, 500, 64, 20};  // Bottom, 64x32
-    Ball ball = {400, 300, 200, -200, 8}; // Center, 16x16
+    Paddle paddle = {400, 500, 64, 20, 0, 64}; 
+    Ball ball = {400, 300, 200, -200, 8}; 
     Game game = {0, 3};
     std::vector<Brick> bricks;
     std::vector<Powerup> powerups;
 
-    // Procedural Brick Generation (5x3 grid)
+    // Procedural Brick Generation
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_real_distribution<> dropChance(0, 1);
-    for (int row = 0; row < 3; row++) {
-        for (int col = 0; col < 5; col++) {
-            int durability = (row == 0) ? 3 : (row == 1) ? 2 : 1; // Top row = 3 hits, middle = 2, bottom = 1
-            int scoreValue = durability * 10; // 10, 20, or 30 points
-            bricks.emplace_back(100 + col*120, 100 + row*40, 80, 20, durability, scoreValue);
-        }
-    }
+    GenerateBricks(bricks, gen);
 
     // Game Loop
     bool running = true;
     bool gameOver = false;
-    float deltaTime = 0.016f;  // ~60 FPS
+    float deltaTime = 0.016f; 
     while (running) {
         // Handle Events
         SDL_Event e;
@@ -68,16 +79,10 @@ int main() {
             if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_r && gameOver) {
                 game.Reset();
                 ball = {400, 300, 200, -200, 8};
-                paddle = {400, 500, 64, 32};
+                paddle = {400, 500, 64, 20, 0, 64};
                 bricks.clear();
                 powerups.clear();
-                for (int row = 0; row < 3; row++) {
-                    for (int col = 0; col < 5; col++) {
-                        int durability = (row == 0) ? 3 : (row == 1) ? 2 : 1;
-                        int scoreValue = durability * 10;
-                        bricks.emplace_back(100 + col*120, 100 + row*40, 80, 20, durability, scoreValue);
-                    }
-                }
+                GenerateBricks(bricks, gen);
                 gameOver = false;
             }
         }
@@ -91,9 +96,9 @@ int main() {
                     ball.vy = -ball.vy;
                     game.score += brick.scoreValue;
                     std::cerr << "Score: " << game.score << std::endl;
-                    // 20% chance to drop powerup
-                    if (dropChance(gen) < 0.2) {
-                        Powerup::Type type = (dropChance(gen) < 0.5) ? Powerup::PADDLE_SIZE : Powerup::EXTRA_LIFE;
+                    // 5% chance to drop powerup
+                    if (dropChance(gen) < 0.05) {
+                        Powerup::Type type = (dropChance(gen) < 0.74) ? Powerup::PADDLE_SIZE : Powerup::EXTRA_LIFE;
                         powerups.emplace_back(brick.x, brick.y, 16, 16, type);
                     }
                 }
@@ -103,9 +108,10 @@ int main() {
                 if (powerup.active) {
                     powerup.Update(deltaTime, paddle.x, paddle.y, paddle.w, paddle.h);
                     // Apply powerup effect if collected
-                    if (!powerup.active && powerup.y >= paddle.y - paddle.h/2 && powerup.y <= paddle.y + paddle.h/2) {
+                    if (!powerup.active && powerup.collected) {
                         if (powerup.type == Powerup::PADDLE_SIZE) {
                             paddle.SetWidth(paddle.w * 1.5); // Increase paddle width by 50%
+                            paddle.SetDuration(375); 
                         } else if (powerup.type == Powerup::EXTRA_LIFE) {
                             game.lives += 1;
                             std::cerr << "Extra life gained! Lives: " << game.lives << std::endl;
