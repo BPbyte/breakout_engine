@@ -1,3 +1,5 @@
+/* Handles the Paddle object /src/objects/Paddle.cpp*/
+
 #include "Paddle.h"
 #include <SDL2/SDL.h>
 #include <iostream>
@@ -11,5 +13,5 @@ void Paddle::Update(float deltaTime) {
     if (x - w/2 < 0) x = w/2;
     if (x + w/2 > 800) x = 800 - w/2;
 
-    std::cerr << "Paddle pos: (" << x << ", " << y << ")" << std::endl;
+    // std::cerr << "Paddle pos: (" << x << ", " << y << ")" << std::endl;
 }

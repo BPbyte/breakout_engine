@@ -1,3 +1,5 @@
+/* for initalization and gameplay loop /src/main.cpp*/
+
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
 #include <GL/gl.h>
@@ -31,10 +33,11 @@ int main() {
     Texture powerupTexture("/home/breki/Projects/MyEngine/assets/sprites/powerup.png");
     SpriteRenderer renderer;
 
-    // Game Objects
+    // Game Objects --Memory allocated here
     Paddle paddle = {400, 500, 64, 32};  // Bottom, 64x32
     Ball ball = {400, 300, 200, -200, 8}; // Center, 16x16
     Game game = {0, 3};
+    // memory consuimg items
     std::vector<Brick> bricks;
     std::vector<Powerup> powerups;
 
@@ -69,6 +72,7 @@ int main() {
                     for (int col = 0; col < 5; col++) {
                         int durability = (row == 0) ? 3 : (row == 1) ? 2 : 1;
                         int scoreValue = durability * 10;
+                        // emplace_back allocated memory dynamically
                         bricks.emplace_back(100 + col*120, 100 + row*40, 80, 20, durability, scoreValue);
                     }
                 }

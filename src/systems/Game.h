@@ -1,3 +1,5 @@
+/* Sets up game values like state points and lives /src/systems/Game.h*/
+
 #ifndef GAME_H
 #define GAME_H
 

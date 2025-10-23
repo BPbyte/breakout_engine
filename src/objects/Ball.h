@@ -1,3 +1,5 @@
+/* Handles the Ball object /src/objects/Ball.h*/
+
 #ifndef BALL_H
 #define BALL_H
 

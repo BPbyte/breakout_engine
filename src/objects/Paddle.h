@@ -1,3 +1,5 @@
+/* Handles the Paddle object /src/objects/Paddle.h*/
+
 #ifndef PADDLE_H
 #define PADDLE_H
 

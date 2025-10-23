@@ -1,3 +1,5 @@
+/* Handles the Ball object /src/objects/Ball.cpp*/
+
 #include "Ball.h"
 #include <iostream>
 
@@ -5,7 +7,7 @@ void Ball::Update(float deltaTime, float paddleX, float paddleY, float paddleW, 
     x += vx * deltaTime;
     y += vy * deltaTime;
 
-    std::cerr << "Ball pos: (" << x << ", " << y << "), vel: (" << vx << ", " << vy << ")" << std::endl;
+    // std::cerr << "Ball pos: (" << x << ", " << y << "), vel: (" << vx << ", " << vy << ")" << std::endl;
 
     // Wall collisions
     if (x - radius < 0 || x + radius > 800) vx = -vx;

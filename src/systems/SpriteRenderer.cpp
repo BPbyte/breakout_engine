@@ -1,3 +1,5 @@
+/* Renders sprites /src/systems/SpriteRenderer.cpp*/
+
 #include "SpriteRenderer.h"
 
 void SpriteRenderer::DrawSprite(Texture& texture, float x, float y, float w, float h) {

@@ -1,3 +1,5 @@
+/* Sets up game values like state points and lives /src/systems/Game.cpp*/
+
 #include "Game.h"
 #include <iostream>
 

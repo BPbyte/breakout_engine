@@ -1,3 +1,5 @@
+/* Handles the Brick object /src/objects/Brick.h*/
+
 #ifndef BRICK_H
 #define BRICK_H
 

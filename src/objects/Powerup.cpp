@@ -1,3 +1,5 @@
+/* Handles the Powerup object /src/objects/Powerup.cpp*/
+
 #include "Powerup.h"
 #include <iostream>
 

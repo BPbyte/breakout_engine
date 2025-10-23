@@ -1,3 +1,5 @@
+/* Handles the Powerup object /src/objects/Powerup.h*/
+
 #ifndef POWERUP_H
 #define POWERUP_H
 

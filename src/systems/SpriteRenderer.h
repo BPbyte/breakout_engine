@@ -1,3 +1,5 @@
+/* Renders sprites /src/systems/SpriteRenderer.h*/
+
 #ifndef SPRITE_RENDERER_H
 #define SPRITE_RENDERER_H
 
