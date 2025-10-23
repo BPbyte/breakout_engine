@@ -1,3 +1,4 @@
+/* Handles the Powerup object /src/objects/Powerup.cpp*/
 #include "Powerup.h"
 #include <iostream>
 
@@ -8,7 +9,7 @@ Powerup::Powerup(float x, float y, float w, float h, Type type)
 
 void Powerup::Update(float deltaTime, float paddleX, float paddleY, float paddleW, float paddleH) {
     x += vx * deltaTime;
-    y += vy * deltaTime; // Changed to += since y increases downward
+    y += vy * deltaTime;
     
     // Paddle collision
     if (x >= paddleX - paddleW/2 && x <= paddleX + paddleW/2 &&

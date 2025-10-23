@@ -3,7 +3,7 @@
 #include "Ball.h"
 #include <iostream>
 
-void Ball::Update(float deltaTime, float paddleX, float paddleY, float paddleW, float paddleH, Game& game, bool& gameOver) {
+void Ball::Update(float deltaTime, float paddleX, float paddleY, float paddleW, float paddleH, Game& game) {
     x += vx * deltaTime;
     y += vy * deltaTime;
 
@@ -16,9 +16,8 @@ void Ball::Update(float deltaTime, float paddleX, float paddleY, float paddleW, 
         x = 400; y = 300; vy = -vy;  // Reset
         game.LoseLife();
         std::cerr << "Ball lost!" << std::endl;
-        if (game.lives <= 0) {
+        if (game.lives <= 0) { 
             std::cerr << "Game over! Final score: " << game.score << std::endl;
-            gameOver = true;
         }
     }
 
@@ -26,7 +25,7 @@ void Ball::Update(float deltaTime, float paddleX, float paddleY, float paddleW, 
     if (x >= paddleX - paddleW/2 && x <= paddleX + paddleW/2 &&
         y + radius >= paddleY - paddleH/2 && y - radius <= paddleY + paddleH/2) {
         vy = -vy;
-        game.AddPoint();
+        game.AddPoint();  // This adds 1 point per paddle hit;
         std::cerr << "Paddle hit!" << std::endl;
     }
 }

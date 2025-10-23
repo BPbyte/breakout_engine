@@ -10,7 +10,7 @@ struct Ball {
     float vx, vy;   // Velocity
     float radius;   // Size
 
-    void Update(float deltaTime, float paddleX, float paddleY, float paddleW, float paddleH, Game& game, bool& gameOver);
+    void Update(float deltaTime, float paddleX, float paddleY, float paddleW, float paddleH, Game& game);  // Removed bool& gameOver
 };
 
 #endif

@@ -1,3 +1,4 @@
+/* Handles the Paddle object /src/objects/Paddle.cpp*/
 #include "Paddle.h"
 #include <SDL2/SDL.h>
 #include <algorithm>
@@ -5,14 +6,14 @@
 
 void Paddle::Update(float deltaTime) {
     const uint8_t* keys = SDL_GetKeyboardState(NULL);
-    if (keys[SDL_SCANCODE_A]) x -= 200 * deltaTime;  // Move left
-    if (keys[SDL_SCANCODE_D]) x += 200 * deltaTime;  // Move right
+    if (keys[SDL_SCANCODE_A]) x -= 200 * deltaTime;  
+    if (keys[SDL_SCANCODE_D]) x += 200 * deltaTime;  
 
     // Update duration and revert width if powerup expires
     if (duration > 0) {
-        duration -= deltaTime * 60.0f; // Assuming 60 FPS
+        duration -= deltaTime * 60.0f; 
         if (duration <= 0) {
-            w = originalWidth; // Revert to original width
+            w = originalWidth; 
             duration = 0;
         }
     }
