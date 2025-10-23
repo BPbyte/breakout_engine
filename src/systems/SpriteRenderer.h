@@ -8,6 +8,7 @@
 class SpriteRenderer {
 public:
     void DrawSprite(Texture& texture, float x, float y, float w, float h);
+    void DrawNumber(Texture* digits, int number, float x, float y, float digitW = 16.0f, float digitH = 16.0f); 
 };
 
 #endif

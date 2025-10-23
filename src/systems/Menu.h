@@ -3,6 +3,7 @@
 #ifndef MENU_H
 #define MENU_H
 
+#include <SDL2/SDL.h>
 #include "util/Texture.h"
 #include "systems/SpriteRenderer.h"
 

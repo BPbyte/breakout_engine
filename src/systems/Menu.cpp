@@ -10,14 +10,18 @@ Menu::Menu() : state(MENU),
 }
 
 void Menu::Update(SDL_Event& e, bool& running) {
+    if (e.type == SDL_QUIT) {
+        running = false;
+        return;  // Early exit for quit
+    }
+
     if (e.type == SDL_KEYDOWN) {
         if (state == MENU && e.key.keysym.sym == SDLK_SPACE) {
             state = PLAYING;
             std::cerr << "Game started!" << std::endl;
         } else if (state == GAME_OVER && e.key.keysym.sym == SDLK_r) {
-            state = MENU;
-        } else if (e.type == SDL_QUIT) {
-            running = false;
+            state = PLAYING;  // Changed to PLAYING for direct restart (per task)
+            std::cerr << "Restarting game!" << std::endl;
         }
     }
 }
