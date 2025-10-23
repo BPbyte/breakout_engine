@@ -12,6 +12,7 @@ set(SOURCES
     src/util/Texture.cpp
     src/util/stb_image.c
     src/systems/SpriteRenderer.cpp
+    src/systems/Menu.cpp
     src/objects/Ball.cpp
     src/objects/Paddle.cpp
     src/objects/Brick.cpp
