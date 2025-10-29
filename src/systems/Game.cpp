@@ -6,6 +6,14 @@
 void Game::Reset() {
     score = 0;
     lives = 3;
+    meteorActive = false;
+    meteorDuration = 0.0f;
+    bigBallActive = false;
+    bigBallDuration = 0.0f;
+    blasterActive = false;
+    blasterDuration = 0.0f;
+    bigPaddleRemainingHits = 0;
+    bullets.clear();
     std::cerr << "Game reset: Score=" << score << ", Lives=" << lives << std::endl;
 }
 

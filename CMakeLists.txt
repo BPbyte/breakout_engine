@@ -18,6 +18,7 @@ set(SOURCES
     src/objects/Brick.cpp
     src/systems/Game.cpp
     src/objects/Powerup.cpp
+    src/objects/Bullet.cpp
 )
 
 find_package(SDL2 REQUIRED)

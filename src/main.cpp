@@ -16,6 +16,7 @@
 #include "systems/Game.h"
 #include "objects/Brick.h"
 #include "objects/Powerup.h"
+#include "objects/Bullet.h"
 #include "systems/Menu.h"
 
 
@@ -62,6 +63,9 @@ int main() {
     Texture brickTexture2("/home/breki/Projects/MyEngine/assets/sprites/brick2.png"); 
     Texture brickTexture3("/home/breki/Projects/MyEngine/assets/sprites/brick3.png"); 
     Texture powerupTexture("/home/breki/Projects/MyEngine/assets/sprites/powerup.png");
+    Texture BlasterTexture("/home/breki/Projects/MyEngine/assets/sprites/blaster.png");
+    Texture MeteorTexture("/home/breki/Projects/MyEngine/assets/sprites/meteor.png");
+
     std::vector<Texture> digitTextures;
     for (int i = 0; i < 10; ++i) {
         std::string path = "/home/breki/Projects/MyEngine/assets/sprites/" + std::to_string(i) + ".png";
@@ -90,65 +94,186 @@ int main() {
     // Game Loop
     bool running = true;
     float deltaTime = 0.016f; 
+    static Uint32 lastFireTime = 0;
     while (running) {
         // Handle Events
         SDL_Event e;
         while (SDL_PollEvent(&e)) {
             menu.Update(e, running);
-            if (e.type == SDL_KEYDOWN && menu.state == PLAYING && e.key.keysym.sym == SDLK_r) {
-                game.Reset();
-                ball = {400, 300, 200, -200, 8};
-                paddle = {400, 500, 64, 20, 0, 64};
-                bricks.clear();
-                powerups.clear();
-                wave = 1;
-                GenerateBricks(bricks, gen, wave);
+            if (e.type == SDL_KEYDOWN) {
+                if (menu.state == PLAYING && e.key.keysym.sym == SDLK_r) {
+                    game.Reset();
+                    ball = {400, 300, 200, -200, 8};
+                    paddle = {400, 500, 64, 20, 0, 64};
+                    bricks.clear();
+                    powerups.clear();
+                    wave = 1;
+                    GenerateBricks(bricks, gen, wave);
+                } else if (menu.state == PLAYING && e.key.keysym.sym == SDLK_SPACE && game.blasterActive) {
+                    Uint32 currentTime = SDL_GetTicks();
+                    if (currentTime - lastFireTime > 200) {
+                        float bulletY = paddle.y - paddle.h / 2 - 4.0f;
+                        game.bullets.emplace_back(paddle.x, bulletY, 0.0f, -300.0f);
+                        std::cerr << "Blaster fired!" << std::endl;
+                        lastFireTime = currentTime;
+                    }
+                }
             }
         }
         
         // Update Physics (only if playing)
         if (menu.state == PLAYING) {
             paddle.Update(deltaTime);
-            ball.Update(deltaTime, paddle.x, paddle.y, paddle.w, paddle.h, game);
-            for (auto& brick : bricks) {
-                if (brick.active && brick.CheckCollision(ball.x, ball.y, ball.radius)) {
-                    ball.vy = -ball.vy;
-                    game.score += brick.scoreValue;
-                    std::cerr << "Score: " << game.score << std::endl;
-                    if (dropChance(gen) < 0.05) {
-                        Powerup::Type type = (dropChance(gen) < 0.74) ? Powerup::PADDLE_SIZE : Powerup::EXTRA_LIFE;
-                        powerups.emplace_back(brick.x, brick.y, 16, 16, type);
-                    }
-                }
-            }
+            ball.Update(deltaTime, paddle, game);
             for (auto& powerup : powerups) {
                 if (powerup.active) {
-                    powerup.Update(deltaTime, paddle.x, paddle.y, paddle.w, paddle.h);
-                    if (!powerup.active && powerup.collected) {
-                        if (powerup.type == Powerup::PADDLE_SIZE) {
-                            paddle.SetWidth(paddle.w * 1.5);
-                            paddle.SetDuration(375); 
-                        } else if (powerup.type == Powerup::EXTRA_LIFE) {
+                    powerup.Update(deltaTime, paddle, ball, game);
+                }
+            }
+            // Apply collected powerups
+            for (size_t i = 0; i < powerups.size(); ++i) {
+                auto& powerup = powerups[i];
+                if (!powerup.active && powerup.collected) {
+                    switch (powerup.type) {
+                        case Powerup::PADDLE_SIZE:
+                            if (game.bigPaddleRemainingHits == 0) {
+                                paddle.originalWidth = paddle.w;
+                                paddle.w *= 1.5f;
+                                std::cerr << "Big paddle activated! 3 hits remaining." << std::endl;
+                            }
+                            game.bigPaddleRemainingHits = 3;
+                            break;
+                        case Powerup::EXTRA_LIFE:
                             game.lives += 1;
                             std::cerr << "Extra life gained! Lives: " << game.lives << std::endl;
-                        }
+                            break;
+                        case Powerup::METEOR:
+                            game.meteorActive = true;
+                            game.meteorDuration = 300.0f;
+                            std::cerr << "Meteor activated! Duration: 5s" << std::endl;
+                            break;
+                        case Powerup::BIG_BALL:
+                            if (!game.bigBallActive) {
+                                ball.radius *= 2.0f;
+                                std::cerr << "Big ball activated! Radius doubled." << std::endl;
+                            }
+                            game.bigBallActive = true;
+                            game.bigBallDuration = 300.0f;
+                            break;
+                        case Powerup::BLASTER:
+                            game.blasterActive = true;
+                            game.blasterDuration = 300.0f;
+                            std::cerr << "Blaster activated! Duration: 5s" << std::endl;
+                            break;
                     }
+                    powerup.collected = false;
                 }
             }
             powerups.erase(
                 std::remove_if(powerups.begin(), powerups.end(), [](const Powerup& p) { return !p.active; }),
                 powerups.end()
             );
-            
+            // Brick collisions
+            float effectiveRadius = game.bigBallActive ? ball.radius * 2.0f : ball.radius;
+            for (auto& brick : bricks) {
+                if (brick.active && brick.IsColliding(ball.x, ball.y, effectiveRadius)) {
+                    bool destroy = false;
+                    bool bounce = true;
+                    if (game.meteorActive) {
+                        destroy = true;
+                        bounce = false;
+                    } else if (game.bigBallActive) {
+                        destroy = true;
+                    } else {
+                        brick.durability--;
+                        if (brick.durability <= 0) destroy = true;
+                    }
+                    if (destroy) {
+                        brick.active = false;
+                        game.score += brick.scoreValue;
+                        std::cerr << "Brick destroyed! Score: " << game.score << std::endl;
+                        if (dropChance(gen) < 0.05) { //powerup chance
+                            float subtype = dropChance(gen);
+                            Powerup::Type type;
+                            if (subtype < 0.5f) type = Powerup::PADDLE_SIZE;
+                            else if (subtype < 0.7f) type = Powerup::EXTRA_LIFE;
+                            else if (subtype < 0.8f) type = Powerup::METEOR;
+                            else if (subtype < 0.9f) type = Powerup::BIG_BALL;
+                            else type = Powerup::BLASTER;
+                            powerups.emplace_back(brick.x, brick.y, 16, 16, type);
+                        }
+                    }
+                    if (bounce) ball.vy = -ball.vy;
+                }
+            }
+            // Update bullets
+            for (auto& bullet : game.bullets) {
+                if (bullet.active) {
+                    bullet.y += bullet.vy * deltaTime;
+                    if (bullet.y > 600) {
+                        bullet.active = false;
+                    } else {
+                        for (auto& brick : bricks) {
+                            if (brick.active && bullet.IsColliding(brick)) {
+                                brick.durability--;
+                                if (brick.durability <= 0) {
+                                    brick.active = false;
+                                    game.score += brick.scoreValue;
+                                    std::cerr << "Bullet destroyed brick! Score: " << game.score << std::endl;
+                                    if (dropChance(gen) < 0.05) {
+                                        float subtype = dropChance(gen);
+                                        Powerup::Type type;
+                                        if (subtype < 0.5f) type = Powerup::PADDLE_SIZE;
+                                        else if (subtype < 0.7f) type = Powerup::EXTRA_LIFE;
+                                        else if (subtype < 0.8f) type = Powerup::METEOR;
+                                        else if (subtype < 0.9f) type = Powerup::BIG_BALL;
+                                        else type = Powerup::BLASTER;
+                                        powerups.emplace_back(brick.x, brick.y, 16, 16, type);
+                                    }
+                                }
+                                bullet.active = false;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            game.bullets.erase(
+                std::remove_if(game.bullets.begin(), game.bullets.end(), [](const Bullet& b) { return !b.active; }),
+                game.bullets.end()
+            );
+            // Tick powerup durations
+            if (game.meteorDuration > 0) {
+                game.meteorDuration -= 1.0f;
+                if (game.meteorDuration <= 0) {
+                    game.meteorActive = false;
+                    std::cerr << "Meteor expired!" << std::endl;
+                }
+            }
+            if (game.bigBallDuration > 0) {
+                game.bigBallDuration -= 1.0f;
+                if (game.bigBallDuration <= 0 && game.bigBallActive) {
+                    ball.radius /= 2.0f;
+                    game.bigBallActive = false;
+                    std::cerr << "Big ball expired! Radius halved." << std::endl;
+                }
+            }
+            if (game.blasterDuration > 0) {
+                game.blasterDuration -= 1.0f;
+                if (game.blasterDuration <= 0) {
+                    game.blasterActive = false;
+                    std::cerr << "Blaster expired!" << std::endl;
+                }
+            }
+            // Check for wave clear
             int activeBricks = Brick::CountActive(bricks);
             if (activeBricks == 0) {
                 game.score += 500;  // Clear bonus
                 std::cerr << "Wave " << wave << " cleared! Bonus +500. Total score: " << game.score << std::endl;
                 wave++;
+                game.bullets.clear();
                 GenerateBricks(bricks, gen, wave);
-                // Optional: Brief pause? SDL_Delay(500); but that blocks; use a timer var next.
             }
-
             if (game.lives <= 0) {
                 menu.state = GAME_OVER;
             }
@@ -159,8 +284,11 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT);
         
         if (menu.state == PLAYING) {
-            renderer.DrawSprite(paddleTexture, paddle.x, paddle.y, paddle.w, paddle.h);
-            renderer.DrawSprite(ballTexture, ball.x, ball.y, 16, 16);
+            Texture& activePaddleTex = game.blasterActive ? BlasterTexture : paddleTexture;
+            renderer.DrawSprite(activePaddleTex, paddle.x, paddle.y, paddle.w, paddle.h);
+            float ballR = game.bigBallActive ? ball.radius * 2.0f : ball.radius;
+            Texture& activeBallTex = game.meteorActive ? MeteorTexture : ballTexture;
+            renderer.DrawSprite(activeBallTex, ball.x, ball.y, ballR * 2.0f, ballR * 2.0f);
             for (auto& brick : bricks) {
                 if (brick.active) {
                     Texture& brickTexture = (brick.durability == 3) ? brickTexture3 :
@@ -171,6 +299,11 @@ int main() {
             for (auto& powerup : powerups) {
                 if (powerup.active) {
                     renderer.DrawSprite(powerupTexture, powerup.x, powerup.y, powerup.w, powerup.h);
+                }
+            }
+            for (const auto& bullet : game.bullets) {
+                if (bullet.active) {
+                    renderer.DrawSprite(powerupTexture, bullet.x, bullet.y, 8.0f, 8.0f);
                 }
             }
             // Draw score and lives (scaled up)

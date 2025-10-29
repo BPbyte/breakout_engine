@@ -1,0 +1,14 @@
+Congrats on nailing the powerups and tweaks—that's a solid core loop now, with stacking, visuals, and balance feeling pretty tight. The meteor/big ball sprite thing is likely just a priority order in the ternary (e.g., check meteor first always wins), but yeah, debug later. Dev keys broke menus? Probably a scoping issue in the event handler—easy fix if you circle back (I can spot-patch it anytime).
+
+Since this is casual C++ practice, let's brainstorm next steps that build skills without overwhelming. I'll focus on bite-sized features that ramp up concepts like data structures, I/O, or algorithms. Here's a quick comparison of your ideas + a couple extras:
+
+| Feature | What It Involves (C++ Learning) | Effort (Hours) | Why Fun/Useful? | Potential Drawbacks |
+|---------|---------------------------------|----------------|-----------------|---------------------|
+| **RNG Brick Patterns** | Procedural gen with seeds, 2D arrays/vecs for layouts, random distros (e.g., clusters, spirals). Extend `GenerateBricks` with modes like "pyramid" or "labyrinth" via params. | 2-4 | Adds replayability—waves feel fresh. Teaches `<random>`, loops, and pattern algos without files. | Could feel gimmicky if overdone; test balance to avoid unfair spawns. |
+| **Levels/Campaign** | Struct/class for `Level` (reuse your stubbed `Level.cpp`), load from arrays/files (e.g., predefined brick grids). Add level select in menu, win condition (clear X levels → new wave type). | 4-6 | Turns endless mode into progression. Builds on your `Level.h`, teaches enums/states, vector serialization. | More UI work (menu updates); scope creep if you add bosses. |
+| **Settings/Saving** | `std::fstream` for high scores/configs (lives/speed multipliers), simple JSON-like parsing (or just INI). Save on wave clear/death, load on start. | 3-5 | Persistent progress motivates play. Great for file I/O, strings, error handling—real-world C++ staple. | Edge cases (corrupt saves); keep it basic to avoid libs like nlohmann/json. |
+| **Audio/SFX** (Bonus) | SDL_Mixer for hit/bounce/destroy sounds. Load/play in events (e.g., `Audio::Play()` on collision). | 1-3 | Immersive polish—feels pro fast. Teaches resource management, callbacks. | Audio files needed; debug latency if not careful. |
+
+**My Rec**: Start with **RNG Brick Patterns**—it's the quickest win (low overhead, builds on your gen function), super engaging for testing waves, and reinforces `<random>` + loops (core C++). E.g., add a `PatternType` enum (RANDOM, PYRAMID, ZIGZAG), pass it to `GenerateBricks`, and use conditionals/seeds for variety. From there, layer in levels (use patterns as level templates) or saving (log best wave/pattern score).
+
+What sparks your interest most? Or got another wild idea, like sticky balls or multi-ball chaos? We can pseudocode the first step whenever.
