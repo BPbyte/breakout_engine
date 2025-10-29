@@ -2,6 +2,7 @@
 
 #include "Brick.h"
 #include <iostream>
+#include <vector>
 
 Brick::Brick(float x, float y, float w, float h, int durability, int scoreValue)
     : x(x), y(y), w(w), h(h), durability(durability), scoreValue(scoreValue), active(true) {
@@ -22,4 +23,12 @@ bool Brick::CheckCollision(float ballX, float ballY, float ballRadius) {
         return true;
     }
     return false;
+}
+
+int Brick::CountActive(const std::vector<Brick>& bricks) {
+    int count = 0;
+    for (const auto& brick : bricks) {
+        if (brick.active) count++;
+    }
+    return count;
 }

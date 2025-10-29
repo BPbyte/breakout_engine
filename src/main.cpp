@@ -20,19 +20,24 @@
 
 
 // Function to generate bricks
-void GenerateBricks(std::vector<Brick>& bricks, std::mt19937& gen) {
+void GenerateBricks(std::vector<Brick>& bricks, std::mt19937& gen, int wave) {
     bricks.clear();
-    std::uniform_int_distribution<> durabilityDistribution(1, 3);
-    for (int row = 0; row < 8; row++) {
+    std::uniform_int_distribution<> durabilityDistribution(1 + (wave / 3), 3 + (wave / 5));  // e.g., wave 1: 1-3, wave 6: 2-4
+    int rows = std::min(8 + (wave / 2), 12);  // Start at 8, +1 every 2 waves, cap 12
+    float gapChance = 0.2f - (wave * 0.01f);  // Fewer gaps as waves increase (min 0.1)
+    if (gapChance < 0.1f) gapChance = 0.1f;
+    std::uniform_real_distribution<> gapDist(0, 1);
+    for (int row = 0; row < rows; row++) {
         for (int col = 0; col < 6; col++) {
-            bool isGap = std::uniform_real_distribution<>(0, 1)(gen) < 0.2;
+            bool isGap = gapDist(gen) < gapChance;
             if (!isGap) {
                 int durability = durabilityDistribution(gen);
-                int scoreValue = durability * 10;
+                int scoreValue = durability * 10 * (1 + (wave / 10));  // Slight score scaling
                 bricks.emplace_back(100 + col*120, 100 + row*40, 80, 20, durability, scoreValue);
             }
         }
     }
+    std::cerr << "Wave " << wave << " generated: " << rows << " rows, " << bricks.size() << " bricks" << std::endl;
 }
 
 int main() {
@@ -68,15 +73,16 @@ int main() {
     // Game Objects
     Paddle paddle = {400, 500, 64, 20, 0, 64}; 
     Ball ball = {400, 300, 200, -200, 8}; 
-    Game game = {0, 3};
+    Game game = {0, 6};
     std::vector<Brick> bricks;
     std::vector<Powerup> powerups;
 
     // Procedural Brick Generation
     std::random_device rd;
     std::mt19937 gen(rd());
+    int wave = 1;
     std::uniform_real_distribution<> dropChance(0, 1);
-    GenerateBricks(bricks, gen);
+    GenerateBricks(bricks, gen, wave);
 
     // Menu
     Menu menu;
@@ -95,7 +101,8 @@ int main() {
                 paddle = {400, 500, 64, 20, 0, 64};
                 bricks.clear();
                 powerups.clear();
-                GenerateBricks(bricks, gen);
+                wave = 1;
+                GenerateBricks(bricks, gen, wave);
             }
         }
         
@@ -132,6 +139,15 @@ int main() {
                 std::remove_if(powerups.begin(), powerups.end(), [](const Powerup& p) { return !p.active; }),
                 powerups.end()
             );
+            
+            int activeBricks = Brick::CountActive(bricks);
+            if (activeBricks == 0) {
+                game.score += 500;  // Clear bonus
+                std::cerr << "Wave " << wave << " cleared! Bonus +500. Total score: " << game.score << std::endl;
+                wave++;
+                GenerateBricks(bricks, gen, wave);
+                // Optional: Brief pause? SDL_Delay(500); but that blocks; use a timer var next.
+            }
 
             if (game.lives <= 0) {
                 menu.state = GAME_OVER;
@@ -160,6 +176,7 @@ int main() {
             // Draw score and lives (scaled up)
             renderer.DrawNumber(digitTextures.data(), game.score, 10, 20, 24.0f, 24.0f);  
             renderer.DrawNumber(digitTextures.data(), game.lives, 740, 20, 24.0f, 24.0f);  
+            renderer.DrawNumber(digitTextures.data(), wave, 370, 20, 24.0f, 24.0f);  // Wave display left of lives
         }
         
         menu.Render(renderer);  // Draws menu or game over screen
