@@ -6,8 +6,8 @@
 
 void Paddle::Update(float deltaTime) {
     const uint8_t* keys = SDL_GetKeyboardState(NULL);
-    if (keys[SDL_SCANCODE_A]) x -= 200 * deltaTime;  
-    if (keys[SDL_SCANCODE_D]) x += 200 * deltaTime;  
+    if (keys[SDL_SCANCODE_A]) x -= 350 * deltaTime;  
+    if (keys[SDL_SCANCODE_D]) x += 350 * deltaTime;  
 
     // Update duration and revert width if powerup expires
     if (duration > 0) {

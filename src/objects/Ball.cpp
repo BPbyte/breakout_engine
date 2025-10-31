@@ -12,13 +12,20 @@ void Ball::Update(float deltaTime, Paddle& paddle, Game& game) {
     if (x - radius < 0 || x + radius > 800) vx = -vx;
     if (y - radius < 0) vy = -vy;
     if (y + radius > 600) {
-        x = 400; y = 300; 
-        vx = 200; vy = -200;  // Base reset
         game.LoseLife();
-        std::cerr << "Ball lost! Reset to base speed." << std::endl;
-        if (game.lives <= 0) {
+        if (game.lives > 0) {
+            // Reset to paddle
+            float paddleTop = paddle.y - paddle.h / 2;
+            x = paddle.x;
+            y = paddleTop - radius - 1.0f;
+            vx = 0;
+            vy = 0;
+            launched = false;  // Wait for spacebar launch
+            std::cerr << "Ball lost! Reset to paddle. Lives: " << game.lives << std::endl;
+        } else {
             std::cerr << "Game over! Final score: " << game.score << std::endl;
         }
+        return;  // Skip further updates this frame
     }
     
     // Paddle collision (reflection + subtle deflection + speed ramp + big paddle count)
